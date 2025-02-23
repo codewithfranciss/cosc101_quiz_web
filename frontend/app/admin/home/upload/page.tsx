@@ -1,4 +1,3 @@
-
 'use client'
 import React, { useState } from "react";
 import { FaCloudUploadAlt, FaFileAlt } from "react-icons/fa";
@@ -19,6 +18,29 @@ export default function QuestionsUpload() {
     }
   };
 
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Please select a file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/upload-questions", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      alert(result.message);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Failed to upload file");
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       {/* File Upload Box */}
@@ -35,7 +57,7 @@ export default function QuestionsUpload() {
         <p className="text-gray-500 text-sm">or click to select a file</p>
 
         {/* Hidden File Input */}
-        <input type="file" className="hidden" id="fileInput" onChange={handleFileChange} />
+        <input type="file" className="hidden" id="fileInput" accept=".xlsx, .xls" onChange={handleFileChange} />
         <label htmlFor="fileInput" className="block mt-4 bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700">
           Choose File
         </label>
@@ -51,7 +73,10 @@ export default function QuestionsUpload() {
 
       {/* Upload Button */}
       {file && (
-        <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700">
+        <button 
+          onClick={handleUpload} 
+          className="mt-4 bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700"
+        >
           Upload File
         </button>
       )}

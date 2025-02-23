@@ -2,3 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+
+  body {
+    @apply bg-background ;
+  }
+  .outline-ring {
+    @apply outline outline-gray-300/50;
+  }
+}

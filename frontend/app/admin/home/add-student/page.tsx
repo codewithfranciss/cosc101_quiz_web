@@ -1,10 +1,10 @@
-
 'use client'
 import React, { useState } from "react";
 import { FaCloudUploadAlt, FaFileAlt } from "react-icons/fa";
 
-export default function Addstudent() {
+export default function AddStudent() {
   const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -19,10 +19,40 @@ export default function Addstudent() {
     }
   };
 
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Please select a file first.");
+      return;
+    }
+
+    setUploading(true);
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/upload-users", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      alert(result.message);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+      setFile(null);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       {/* File Upload Box */}
-      <h2 className="text-2xl font-bold py-8">Register Student: <span className="text-red-500">Excel format only</span></h2>
+      <h2 className="text-2xl font-bold py-8">
+        Register Student: <span className="text-red-500">Excel format only</span>
+      </h2>
       <div
         className="w-full max-w-lg p-6 bg-white border-2 border-dashed border-gray-400 rounded-lg shadow-md text-center cursor-pointer"
         onDragOver={(e) => e.preventDefault()}
@@ -35,7 +65,7 @@ export default function Addstudent() {
         <p className="text-gray-500 text-sm">or click to select a file</p>
 
         {/* Hidden File Input */}
-        <input type="file" className="hidden" id="fileInput" onChange={handleFileChange} />
+        <input type="file" className="hidden" id="fileInput" onChange={handleFileChange} accept=".xls,.xlsx"/>
         <label htmlFor="fileInput" className="block mt-4 bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700">
           Choose File
         </label>
@@ -51,8 +81,12 @@ export default function Addstudent() {
 
       {/* Upload Button */}
       {file && (
-        <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700">
-          Upload File
+        <button 
+          onClick={handleUpload}
+          className={`mt-4 px-6 py-2 rounded-md text-white ${uploading ? "bg-gray-500 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+          disabled={uploading}
+        >
+          {uploading ? "Uploading..." : "Upload File"}
         </button>
       )}
     </div>

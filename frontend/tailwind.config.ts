@@ -15,6 +15,7 @@ export default {
 			'primary': '#45c84f',
 			'secondary': '#8ae892',
 			'accent': '#5eeb69',
+			border: "#E5E7EB",
 		   },
   		borderRadius: {
   			lg: 'var(--radius)',

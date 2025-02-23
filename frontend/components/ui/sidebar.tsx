@@ -10,17 +10,17 @@ export default function Sidebar() {
 
       {/* Navigation Links */}
       <nav className="flex flex-col space-y-4">
-        <Link href="/upload-questions" className="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+        <Link href="/admin/home/upload" className="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
           <FaFileUpload className="w-5 h-5" />
           <span>Upload Questions</span>
         </Link>
 
-        <Link href="/add-student" className="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+        <Link href="/admin/home/add-student" className="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
           <FaUserPlus className="w-5 h-5" />
           <span>Add Student</span>
         </Link>
 
-        <Link href="/view-score" className="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+        <Link href="/admin/home/view-score" className="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
           <FaChartBar className="w-5 h-5" />
           <span>View Score</span>
         </Link>
