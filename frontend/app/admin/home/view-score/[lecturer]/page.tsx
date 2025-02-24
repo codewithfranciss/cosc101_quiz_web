@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import * as XLSX from "xlsx";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,7 +18,7 @@ export default function LecturerScores() {
 
   useEffect(() => {
     if (lecturer) {
-      fetch(`http://localhost:5000/api/scores/${lecturer}`)
+      fetch(`http://10.136.3.10:5000/api/scores/${lecturer}`)
         .then((res) => res.json())
         .then((data) => {
           const results = data.message ? [] : data;
@@ -42,6 +43,34 @@ export default function LecturerScores() {
     }
   }, [search, scores]);
 
+  // Export scores to Excel without file-saver
+  const exportToExcel = () => {
+    if (filteredScores.length === 0) {
+      alert("No scores to export.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(filteredScores);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Scores");
+
+    // Generate Excel file as a Blob
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+
+    // Create a download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `scores_${lecturer}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen p-6">
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">Scores for {lecturer}</h2>
@@ -59,22 +88,28 @@ export default function LecturerScores() {
         {loading ? (
           <p>Loading...</p>
         ) : filteredScores.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Matric Number</TableHead>
-                <TableHead>Score</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredScores.map((score, index) => (
-                <TableRow key={index}>
-                  <TableCell>{score.matric_number}</TableCell>
-                  <TableCell>{score.score}</TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Matric Number</TableHead>
+                  <TableHead>Score</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredScores.map((score, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{score.matric_number}</TableCell>
+                    <TableCell>{score.score}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <Button className="mt-4 bg-green-500" onClick={exportToExcel}>
+              Download Excel
+            </Button>
+          </>
         ) : (
           <p className="text-gray-500 text-center">No scores found.</p>
         )}

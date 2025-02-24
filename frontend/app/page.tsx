@@ -57,7 +57,7 @@ export default function Page() {
     try {
       // Check if already submitted
       const verifyResponse = await fetch(
-        `http://localhost:5000/api/check-submission?matric_number=${formData.matric_number}`
+        `http://10.136.3.10:5000/api/check-submission?matric_number=${formData.matric_number}`
       );
       const verifyData = await verifyResponse.json();
 
@@ -69,7 +69,7 @@ export default function Page() {
       }
 
       // Proceed with login
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch("http://10.136.3.10:5000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

@@ -34,7 +34,7 @@ export default function Quiz() {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/questions");
+        const response = await fetch("http://10.136.3.10:5000/api/questions");
         if (!response.ok) throw new Error("Failed to fetch questions");
         const data: Question[] = await response.json();
         setQuestions(data);
@@ -98,7 +98,7 @@ export default function Quiz() {
       answers: answers, // Send user answers
 };
       try {
-  const response = await fetch("http://localhost:5000/api/submit-quiz", {
+  const response = await fetch("http://10.136.3.10:5000/api/submit-quiz", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

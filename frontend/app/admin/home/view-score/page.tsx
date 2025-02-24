@@ -13,7 +13,7 @@ export default function ViewScores() {
   useEffect(() => {
     const fetchLecturers = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/lecturers");
+        const response = await fetch("http://10.136.3.10:5000/api/lecturers");
         const data: Lecturer[] = await response.json();
         setLecturers(data);
       } catch (error) {
