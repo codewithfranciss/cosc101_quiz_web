@@ -3,7 +3,7 @@ const db = require("../config/db");
 const { upload, uploadUsers } = require("../controller/userController");
 const { loginUser } = require("../controller/authController");
 const { uploadQuestions, getQuestions } = require("../controller/questionController");
-const {calculateScore, getLecturers, getLecturerScore, checkSubmission } = require("../controller/scoreController")
+const {calculateScore, getLecturers, getLecturerScore, checkSubmission, getDepartment, getDepartmentScore } = require("../controller/scoreController")
 
 const router = express.Router();
 
@@ -13,9 +13,12 @@ router.post("/login", loginUser);
 router.post("/upload-questions", upload.single("file"), uploadQuestions);
 router.get("/questions", getQuestions);
 router.post("/submit-quiz", calculateScore )
+router.get("/department", getDepartment)
 router.get("/lecturers", getLecturers)
 router.get("/scores/:lecturer", getLecturerScore)
+router.get("/score/department/:department", getDepartmentScore)
 router.get("/check-submission", checkSubmission)// Your MySQL database connection
+
 
 router.get("/get-lecturers", async (req, res) => {
     try {

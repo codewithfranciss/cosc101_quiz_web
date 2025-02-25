@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-export default function LecturerScores() {
-  const { lecturer } = useParams();
+export default function DepartmentScores() {
+  const { department } = useParams();
   
   const router = useRouter();
   const [scores, setScores] = useState<{ matric_number: string; full_name: string; score: number }[]>([]);
@@ -18,10 +18,12 @@ export default function LecturerScores() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (lecturer) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/scores/${lecturer}`)
+    console.log("Fetching scores for department:", department);
+    if (department) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/score/department/${department}`)
         .then((res) => res.json())
         .then((data) => {
+          console.log("API Response:", data); // Debugging line
           const results = data.message ? [] : data;
           setScores(results);
           setFilteredScores(results);
@@ -29,9 +31,8 @@ export default function LecturerScores() {
         })
         .catch((error) => console.error("Error fetching scores:", error));
     }
-  }, [lecturer]);
+  }, [department]);
 
-  // Handle search filtering
   useEffect(() => {
     if (search.trim() === "") {
       setFilteredScores(scores);
@@ -49,43 +50,36 @@ export default function LecturerScores() {
       alert("No scores to export.");
       return;
     }
-  
-    // Transform data to include all table columns
+
     const excelData = filteredScores.map((score) => ({
       "Matric Number": score.matric_number,
       "Full Name": score.full_name,
       "Score (/30)": score.score,
       "Score (/15)": score.score / 2,
     }));
-  
+
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Scores");
-  
-    // Generate Excel file as a Blob
+
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  
-    // Create a download link
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `scores_${lecturer}.xlsx`;
+    link.download = `scores_${department}.xlsx`;
     document.body.appendChild(link);
     link.click();
-  
-    // Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-  
 
   return (
     <div className="flex flex-col items-center min-h-screen p-6">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Scores for {lecturer}</h2>
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Scores for {department}</h2>
 
       <Card className="w-full max-w-2xl p-4">
-        {/* Search Input */}
         <Input
           type="text"
           placeholder="Search by Matric Number..."
@@ -113,7 +107,7 @@ export default function LecturerScores() {
                     <TableCell>{score.matric_number}</TableCell>
                     <TableCell>{score.full_name}</TableCell>
                     <TableCell>{score.score}</TableCell>
-                    <TableCell>{score.score /2}</TableCell>
+                    <TableCell>{score.score / 2}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -128,9 +122,7 @@ export default function LecturerScores() {
         )}
       </Card>
 
-      <Button className="mt-4" onClick={() => router.push("/admin/home/view-score/")}>
-        Go Back
-      </Button>
+      <Button className="mt-4" onClick={() => router.push("/admin/home/view-score/")}>Go Back</Button>
     </div>
   );
 }

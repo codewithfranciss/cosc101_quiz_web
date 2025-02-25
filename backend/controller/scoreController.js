@@ -55,13 +55,28 @@ const getLecturers = async (req, res) => {
   }
 };
 
+const getDepartment = async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT DISTINCT department FROM quiz_results");
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "No departments found" });
+    }
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 const getLecturerScore = async (req, res) => {
   try {
     const lecturer = req.params.lecturer; 
 
     // Fetch student scores for this lecturer
     const [rows] = await db.query(
-      "SELECT matric_number, score FROM quiz_results WHERE lecturer = ?",
+      "SELECT matric_number, score, full_name FROM quiz_results WHERE lecturer = ?",
       [lecturer]
     );
 
@@ -75,6 +90,29 @@ const getLecturerScore = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const getDepartmentScore = async (req, res) => {
+  try {
+    const department = req.params.department; 
+    console.log(department);
+
+    // Fetch student scores for this department
+    const [rows] = await db.query(
+      "SELECT matric_number, score, full_name FROM quiz_results WHERE department = ?",
+      [department]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "No scores found for this department" });
+    }
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching scores:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 const checkSubmission =  async (req, res) => {
   const { matric_number } = req.query;
@@ -93,4 +131,4 @@ const checkSubmission =  async (req, res) => {
   }
 }
 
-module.exports = { calculateScore, getLecturers, getLecturerScore, checkSubmission };
+module.exports = { calculateScore, getLecturers, getLecturerScore, checkSubmission, getDepartment, getDepartmentScore};
