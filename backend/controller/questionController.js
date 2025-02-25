@@ -58,7 +58,7 @@ const uploadQuestions = async (req, res) => {
 const getQuestions = async (req, res) => {
   try {
     const [rows] = await db.query(
-      "SELECT id, question, option_a, option_b, option_c, option_d FROM questions ORDER BY RAND() LIMIT 60"
+      "SELECT id, question, option_a, option_b, option_c, option_d FROM questions ORDER BY RAND() LIMIT 30"
     );
 
     const formattedQuestions = rows.map((row) => ({

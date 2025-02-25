@@ -2,7 +2,7 @@ const db = require("../config/db");
 
 const calculateScore = async (req, res) => {
   try {
-    const { matric_number, lecturer, answers } = req.body;
+    const { matric_number, lecturer, department, full_name, answers } = req.body;
 
     if (!matric_number || !lecturer || !answers) {
       return res.status(400).json({ message: "Invalid request data" });
@@ -29,8 +29,8 @@ const calculateScore = async (req, res) => {
     });
 
     await db.query(
-      "INSERT INTO quiz_results (matric_number, lecturer, score) VALUES (?, ?, ?)",
-      [matric_number, lecturer, score]
+      "INSERT INTO quiz_results (matric_number, lecturer, full_name, department, score) VALUES (?, ?, ?, ?, ?)",
+      [matric_number, lecturer, full_name, department, score]
     );
 
     res.json({ message: "Quiz submitted successfully", score });

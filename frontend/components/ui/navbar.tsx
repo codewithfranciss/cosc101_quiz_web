@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 
 export default function Navbar() {
   const [matricNumber, setMatricNumber] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
     // Retrieve student data from local storage
@@ -11,6 +12,7 @@ export default function Navbar() {
     if (storedStudentData) {
       const student = JSON.parse(storedStudentData);
       setMatricNumber(student.matric_number);
+      setName(student.full_name);
     }
   }, []);
 
@@ -22,7 +24,7 @@ export default function Navbar() {
       {/* Matric Number Display */}
       <div className="flex items-center gap-4">
         <span className="text-white">
-          Matric Number: {matricNumber ? matricNumber : "Not logged in"}
+          {matricNumber ? matricNumber : "Not logged in"}, {name ? name : "Anonymous"}
         </span>
       </div>
     </nav>

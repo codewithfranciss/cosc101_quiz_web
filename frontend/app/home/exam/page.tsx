@@ -13,43 +13,66 @@ interface Question {
 
 export default function Quiz() {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(30 * 60);
-  const [studentData, setStudentData] = useState<{ matric_number: string; lecturer: string } | null>(null); // 40 minutes in seconds
+  const [studentData, setStudentData] = useState<{ matric_number: string; full_name: string; lecturer: string; department: string; } | null>(null);
   const [loading, setLoading] = useState(false);
+
   // Fetch student data from local storage
   useEffect(() => {
     const storedData = localStorage.getItem("studentData");
     if (storedData) {
       setStudentData(JSON.parse(storedData));
-    }else{
-      router.push('/')
+    } else {
+      router.push("/");
     }
   }, []);
 
-
-  // Fetch questions from backend
+  // Fetch questions only if studentData exists
   useEffect(() => {
+    if (!studentData) return;
+    
     const fetchQuestions = async () => {
       try {
-        const response = await fetch("http://10.136.3.10:5000/api/questions");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/questions`);
         if (!response.ok) throw new Error("Failed to fetch questions");
         const data: Question[] = await response.json();
         setQuestions(data);
       } catch (error) {
         console.error("Error fetching questions:", error);
+      } finally {
+        setLoadingQuestions(false);
       }
     };
 
     fetchQuestions();
+  }, [studentData]);
+
+  // Fetch timer from backend
+  useEffect(() => {
+    const fetchTimer = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/get-timer`);
+        const data = await response.json();
+        if (response.ok) {
+          setTimeLeft(data.timer * 60);
+        } else {
+          console.error("Failed to fetch timer:", data.error);
+        }
+      } catch (error) {
+        console.error("Error fetching timer:", error);
+      }
+    };
+    fetchTimer();
   }, []);
 
   // Timer countdown
   useEffect(() => {
     if (timeLeft <= 0) {
-      handleSubmit(); // Auto-submit when time runs out
+      handleSubmit();
       return;
     }
 
@@ -67,7 +90,6 @@ export default function Quiz() {
     return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  // Handle selecting an answer
   const handleSelectOption = (questionId: number, option: string) => {
     setAnswers((prevAnswers) => ({
       ...prevAnswers,
@@ -75,7 +97,6 @@ export default function Quiz() {
     }));
   };
 
-  // Handle Next & Previous
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) setCurrentQuestion((prev) => prev + 1);
   };
@@ -84,53 +105,51 @@ export default function Quiz() {
     if (currentQuestion > 0) setCurrentQuestion((prev) => prev - 1);
   };
 
-  // Handle quiz submission
   const handleSubmit = async () => {
-    if(!studentData){
-      alert("Please login to submit exam")
-      router.push('/')
+    if (!studentData) {
+      alert("Please login to submit exam");
+      router.push("/");
+      return;
     }
+
     setLoading(true);
-    console.log("Quiz Submitted! Answers:", answers);
     const payload = {
-      matric_number: studentData?.matric_number,
-      lecturer: studentData?.lecturer,
-      answers: answers, // Send user answers
-};
-      try {
-  const response = await fetch("http://10.136.3.10:5000/api/submit-quiz", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+      matric_number: studentData.matric_number,
+      lecturer: studentData.lecturer,
+      department: studentData.department,
+      full_name: studentData.full_name,
+      answers,
+    };
 
-  if (!response.ok) {
-    throw new Error("Failed to submit quiz");
-  }
-  router.push("/home/submitted");
-} catch (error) {
-  console.error("Submission error:", error);
-  alert("An error occurred while submitting the quiz. Please try again.");
-}finally{
-  setLoading(false)
-}
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submit-quiz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    router.push("/home/submitted");
-    
+      if (!response.ok) {
+        throw new Error("Failed to submit quiz");
+      }
+      router.push("/home/submitted");
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("An error occurred while submitting the quiz. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (questions.length === 0) {
+  if (loadingQuestions) {
     return <p className="text-center text-xl font-semibold">Loading questions...</p>;
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 relative">
-      {/* Timer */}
       <div className="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
         Time Left: {formatTime(timeLeft)}
       </div>
 
-      {/* Pagination */}
       <div className="w-full max-w-4xl bg-white shadow-md rounded-lg p-4 flex flex-wrap justify-center gap-2">
         {questions.map((_, index) => (
           <button
@@ -145,20 +164,15 @@ export default function Quiz() {
         ))}
       </div>
 
-      {/* Quiz Container */}
       <div className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 mt-6">
         <h2 className="text-xl font-bold text-center mb-4">
           COSC 101 - Question {currentQuestion + 1}/{questions.length}
         </h2>
         <p className="text-gray-700 mb-4">{questions[currentQuestion].question}</p>
 
-        {/* Options */}
         <div className="space-y-2">
           {questions[currentQuestion].options.map((option, index) => (
-            <label
-              key={index}
-              className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md cursor-pointer"
-            >
+            <label key={index} className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md cursor-pointer">
               <input
                 type="radio"
                 name={`question-${currentQuestion}`}
@@ -172,26 +186,11 @@ export default function Quiz() {
           ))}
         </div>
 
-        {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">
-          <Button onClick={handlePrev} disabled={currentQuestion === 0} variant="outline">
-            Previous
+          <Button onClick={handlePrev} disabled={currentQuestion === 0} variant="outline">Previous</Button>
+          <Button onClick={currentQuestion === questions.length - 1 ? handleSubmit : handleNext} className="bg-green-700 text-white">
+            {currentQuestion === questions.length - 1 ? (loading ? "Submitting..." : "Submit") : "Next"}
           </Button>
-          {currentQuestion === questions.length - 1 ? (
-            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white" disabled={loading}>
-  {loading ? (
-    <>
-      <Loader2 className="w-5 h-5 animate-spin mr-2" /> Submitting...
-    </>
-  ) : (
-    "Submit"
-  )}
-</Button>
-          ) : (
-            <Button onClick={handleNext} className="bg-green-700 hover:bg-primary text-white">
-              Next
-            </Button>
-          )}
         </div>
       </div>
     </div>

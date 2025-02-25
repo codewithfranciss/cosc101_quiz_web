@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react"; // Spinner icon
@@ -29,11 +29,57 @@ export default function Page() {
     password: "",
     department: "",
     lecturer: "",
+    full_name:"",
   });
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [lecturers, setLecturers] = useState<{ name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchLecturers = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/get-lecturers`
+        );
+        if (!response.ok) throw new Error("Failed to fetch lecturers.");
+        const data = await response.json();
+
+        if (Array.isArray(data.lecturers)) {
+          setLecturers(data.lecturers.map((name: string) => ({ name })));
+        } else {
+          console.error("Invalid API response format:", data);
+          setLecturers([]);
+        }
+      } catch (error: any) {
+        console.error("Error fetching lecturers:", error.message);
+      }
+    };
+
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/get-department`
+        );
+        if (!response.ok) throw new Error("Failed to fetch departments.");
+        const data = await response.json();
+
+        if (Array.isArray(data.departments)) {
+          setDepartments(data.departments.map((name: string) => ({ name })));
+        } else {
+          console.error("Invalid API response format:", data);
+          setDepartments([]);
+        }
+      } catch (error: any) {
+        console.error("Error fetching departments:", error.message);
+      }
+    };
+
+    fetchLecturers();
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,16 +94,15 @@ export default function Page() {
     setError("");
     setLoading(true);
 
-    if (!formData.matric_number || !formData.password) {
-      setError("Matric Number and Password are required.");
+    if (!formData.matric_number || !formData.password || !formData.department || !formData.lecturer) {
+      setError("Fill in your complete details to proceed.");
       setLoading(false);
       return;
     }
 
     try {
-      // Check if already submitted
       const verifyResponse = await fetch(
-        `http://10.136.3.10:5000/api/check-submission?matric_number=${formData.matric_number}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/check-submission?matric_number=${formData.matric_number}`
       );
       const verifyData = await verifyResponse.json();
 
@@ -68,19 +113,20 @@ export default function Page() {
         return;
       }
 
-      // Proceed with login
-      const response = await fetch("http://10.136.3.10:5000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.message || "Login failed.");
       }
 
-      // Store in localStorage
       localStorage.setItem("studentData", JSON.stringify(formData));
       router.push("/home/welcome");
     } catch (error: any) {
@@ -117,6 +163,21 @@ export default function Page() {
                 />
               </div>
 
+
+              {/* Full Name */}
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  placeholder="Surname first"
+                  required
+                  disabled={isSubmitted}
+                />
+              </div>
+
               {/* Password */}
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="password">Password</Label>
@@ -137,17 +198,24 @@ export default function Page() {
                 <Label htmlFor="department">Department</Label>
                 <Select
                   onValueChange={(value) => handleSelectChange("department", value)}
-                  value={formData.department}
+                  value={formData.department || undefined}
                   disabled={isSubmitted}
                 >
                   <SelectTrigger id="department">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
-                    <SelectItem value="computer-science">Computer Science</SelectItem>
-                    <SelectItem value="engineering">Engineering</SelectItem>
-                    <SelectItem value="business">Business Administration</SelectItem>
-                    <SelectItem value="medicine">Medicine</SelectItem>
+                    {departments.length > 0 ? (
+                      departments.map((department, index) => (
+                        <SelectItem key={index} value={department.name}>
+                          {department.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled value="no-departments">
+                        No departments available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -157,22 +225,29 @@ export default function Page() {
                 <Label htmlFor="lecturer">Lecturer</Label>
                 <Select
                   onValueChange={(value) => handleSelectChange("lecturer", value)}
-                  value={formData.lecturer}
+                  value={formData.lecturer || undefined}
                   disabled={isSubmitted}
                 >
                   <SelectTrigger id="lecturer">
                     <SelectValue placeholder="Select lecturer" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="dr-smith">Dr. Smith</SelectItem>
-                    <SelectItem value="prof-johnson">Prof. Johnson</SelectItem>
-                    <SelectItem value="dr-williams">Dr. Williams</SelectItem>
+                  <SelectContent className="bg-white max-h-48 overflow-y-auto">
+                    {lecturers.length > 0 ? (
+                      lecturers.map((lecturer, index) => (
+                        <SelectItem key={index} value={lecturer.name}>
+                          {lecturer.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled value="no-lecturers">
+                        No lecturers available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Error Message */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
 
             <CardFooter className="flex justify-end">
@@ -181,16 +256,7 @@ export default function Page() {
                 type="submit"
                 disabled={loading || isSubmitted}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
-                  </>
-                ) : isSubmitted ? (
-                  "Submitted"
-                ) : (
-                  "Enter Exam"
-                )}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enter Exam"}
               </Button>
             </CardFooter>
           </form>

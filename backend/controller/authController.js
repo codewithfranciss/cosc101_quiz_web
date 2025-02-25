@@ -2,26 +2,24 @@ const db = require("../config/db");
 
 const loginUser = async (req, res) => {
   try {
-    const { matric_number, password } = req.body;
+    
+    const { matric_number, password, lecturer, department } = req.body;
 
-    if (!matric_number || !password) {
-      return res.status(400).json({ message: "Matric Number and Password are required" });
+    if (!matric_number || !password || !lecturer) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Query database
-    const [results] = await db.query("SELECT * FROM users WHERE matric_number = ?", [matric_number]);
+    // Query database for user with matching matric_number, password, and lecturer_name
+    const [results] = await db.query(
+      "SELECT * FROM users WHERE matric_number = ? AND lecturer = ?  AND password = ? AND department = ?",
+      [matric_number, lecturer, password, department]
+    );
 
     if (results.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "Invalid login details" });
     }
 
-    const user = results[0];
-
-    if (user.password !== password) {
-      return res.status(401).json({ message: "Invalid Password" });
-    }
-
-    res.json({ message: "Login successful", user });
+    res.json({ message: "Login successful", user: results[0] });
   } catch (error) {
     console.error("Database error:", error);
     res.status(500).json({ message: "Internal Server Error" });

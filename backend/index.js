@@ -19,6 +19,6 @@ const router = express.Router();
 
 module.exports = router;
 
-app.listen(port,"0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`🚀 Server is running on http://localhost:${port}`);
 });

@@ -26,6 +26,7 @@ const uploadUsers = async (req, res) => {
     const users = data.map(row => ([
       row["Matric Number"],
       row["Lecturer Name"],
+      row["Department"],
       row["Password"]
     ]));
 
@@ -34,7 +35,7 @@ const uploadUsers = async (req, res) => {
     }
 
     // Inserting data into MySQL
-    const query = "INSERT INTO users (matric_number, lecturer_name, password) VALUES ?";
+    const query = "INSERT INTO users (matric_number, lecturer, department, password) VALUES ?";
     await db.query(query, [users]);
 
     console.log("✅ Users inserted successfully");
